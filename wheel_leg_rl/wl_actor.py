@@ -7,10 +7,10 @@ import asyncio
 class WLActor:
     def __init__(self, model_path):
         # model
-        self._model = onnx.load(model_path)
-        self._session = ort.InferenceSession(model_path)
-        self._input_name = self._session.get_inputs()[0].name
-        self._output_name = self._session.get_outputs()[0].name
+        # self._model = onnx.load(model_path)
+        # self._session = ort.InferenceSession(model_path)
+        # self._input_name = self._session.get_inputs()[0].name
+        # self._output_name = self._session.get_outputs()[0].name
 
         # buffers
         self._num_observations = 19
@@ -73,10 +73,10 @@ class WLActor:
             self._observation[11:15] = dof_vel
             self._ready[4] = True
 
-    def output_action(self):
-        '''action: [l_leg_pos, r_leg_pos, l_wheel_vel, r_wheel_vel]'''
-        with self._lock:
-            return self._action
+    def output_action(self) -> np.ndarray:
+            '''action: [l_leg_pos, r_leg_pos, l_wheel_vel, r_wheel_vel]'''
+            with self._lock:
+                return self._action
 
     async def _step(self):
         async with self._lock:
