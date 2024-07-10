@@ -74,6 +74,7 @@ class WLActor:
             self._ready[4] = True
 
     def output_action(self):
+        '''action: [l_leg_pos, r_leg_pos, l_wheel_vel, r_wheel_vel]'''
         with self._lock:
             return self._action
 
