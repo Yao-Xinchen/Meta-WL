@@ -2,11 +2,11 @@ import rclpy
 import numpy as np
 from rclpy.node import Node
 from wheel_leg_rl.wl_actor import WLActor
+from wheel_leg_rl.helpers import *
 
 from device_interface.msg import MotorGoal
 from device_interface.msg import MotorState
 from behavior_interface.msg import Move
-from geometry_msgs.msg import Vector3
 from sensor_msgs.msg import Imu
 
 class WheelLegRL(Node):
@@ -16,7 +16,6 @@ class WheelLegRL(Node):
         self._state_sub = self.create_subscription(MotorState, "motor_state", self._state_callback, 10)
         self._command_sub = self.create_subscription(Move, "move", self._command_callback, 10)
         self._imu_sub = self.create_subscription(Imu, "imu", self._imu_callback, 10)
-        self._euler_sub = self.create_subscription(Vector3, "euler_angles", self._euler_callback, 10)
         self._goal_pub = self.create_publisher(MotorGoal, "motor_goal", 10)
         self._pub_timer = self.create_timer(0.01, self._pub_callback)
 
@@ -42,30 +41,14 @@ class WheelLegRL(Node):
         self._actor.input_commands([msg.vel_x, msg.vel_y, msg.omega])
 
     def _imu_callback(self, msg: Imu) -> None:
-        # TODO: check the sign of the angular velocity
-        roll = msg.angular_velocity.x
-        pitch = - msg.angular_velocity.y
-        yaw = msg.angular_velocity.z
-        self._actor.input_base_ang_vel([roll, pitch, yaw])
+        x = msg.angular_velocity.x
+        y = msg.angular_velocity.y
+        z = msg.angular_velocity.z
+        self._actor.input_base_ang_vel([x, y, z])
 
-    def _euler_callback(self, msg: Vector3) -> None:
-        # projected gravity
-        gravity = 9.81
-        roll, pitch, yaw = msg.x, msg.y, msg.z
-        gravity_vector = np.array([0, 0, -gravity])
-        R_x = np.array([[1, 0, 0],
-                        [0, np.cos(roll), -np.sin(roll)],
-                        [0, np.sin(roll), np.cos(roll)]])
-        
-        R_y = np.array([[np.cos(pitch), 0, np.sin(pitch)],
-                        [0, 1, 0],
-                        [-np.sin(pitch), 0, np.cos(pitch)]])
-        
-        R_z = np.array([[np.cos(yaw), -np.sin(yaw), 0],
-                        [np.sin(yaw), np.cos(yaw), 0],
-                        [0, 0, 1]])
-        R = R_z @ R_y @ R_x
-        projected = R @ gravity_vector
+        quat = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
+        gravity_vector = np.array([0, 0, -9.81])
+        projected = quat_rotate_inverse(quat, gravity_vector)
         self._actor.input_projected_gravity(projected)
 
     def _pub_callback(self) -> None:

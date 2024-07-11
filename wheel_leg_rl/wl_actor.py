@@ -7,10 +7,10 @@ import asyncio
 class WLActor:
     def __init__(self, model_path):
         # model
-        # self._model = onnx.load(model_path)
-        # self._session = ort.InferenceSession(model_path)
-        # self._input_name = self._session.get_inputs()[0].name
-        # self._output_name = self._session.get_outputs()[0].name
+        self._model = onnx.load(model_path)
+        self._session = ort.InferenceSession(model_path)
+        self._input_name = self._session.get_inputs()[0].name
+        self._output_name = self._session.get_outputs()[0].name
 
         # buffers
         self._num_observations = 19
@@ -44,7 +44,7 @@ class WLActor:
         return self._ready.all()
     
     def input_base_ang_vel(self, base_ang_vel):
-        '''base_ang_vel: [roll, pitch, yaw]'''
+        '''base_ang_vel: [x, y, z]'''
         with self._lock:
             self._observation[:3] = base_ang_vel
             self._ready[0] = True
