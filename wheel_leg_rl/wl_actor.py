@@ -15,8 +15,10 @@ class WLActor:
         # buffers
         self._num_observations = 19
         self._num_actions = 4
-        self._observation = np.zeros((self._num_observations,), dtype=np.float32)
+        self._num_latents = 3
+        self._observation = np.zeros((self._num_observations + self._num_latents,), dtype=np.float32)
         self._action = np.zeros((self._num_actions,), dtype=np.float32)
+        self._latent = np.zeros((self._num_latents,), dtype=np.float32) # output from encoder
 
         # threading
         self._ready = np.full((5,), False, dtype=bool)
@@ -81,6 +83,7 @@ class WLActor:
     async def _step(self):
         async with self._lock:
             self._observation[15:19] = self._action
+            self._observation[19:22] = self._latent
             # Run session.run in a thread pool to avoid blocking the asyncio loop
             self._action = await self._loop.run_in_executor(None, lambda: self._session.run([self._output_name], {self._input_name: self._observation})[0])
 

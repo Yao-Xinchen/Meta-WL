@@ -13,7 +13,7 @@ from array import array
 class WheelLegRL(Node):
     def __init__(self) -> None:
         super().__init__('wheel_leg_rl')
-        self._actor = WLActor("~/temp")
+        self._actor = WLActor("../model/actor.onnx")
         self._state_sub = self.create_subscription(MotorState, "motor_state", self._state_callback, 10)
         self._command_sub = self.create_subscription(Move, "move", self._command_callback, 10)
         self._imu_sub = self.create_subscription(Imu, "imu", self._imu_callback, 10)
@@ -47,7 +47,7 @@ class WheelLegRL(Node):
         z = msg.angular_velocity.z
         self._actor.input_base_ang_vel([x, y, z])
 
-        quat = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
+        quat = [msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z]
         gravity_vector = np.array([0, 0, -9.81])
         projected = quat_rotate_inverse(quat, gravity_vector)
         self._actor.input_projected_gravity(projected)
