@@ -8,6 +8,7 @@ from device_interface.msg import MotorGoal
 from device_interface.msg import MotorState
 from behavior_interface.msg import Move
 from sensor_msgs.msg import Imu
+from array import array
 
 class WheelLegRL(Node):
     def __init__(self) -> None:
@@ -55,9 +56,9 @@ class WheelLegRL(Node):
         action = self._actor.output_action()
         msg = MotorGoal()
         msg.motor_id[:4] = ["L_WHL", "R_WHL", "L_LEG", "R_LEG"]
-        msg.goal_pos[:4] = [np.nan, np.nan, action[0], action[1]]
-        msg.goal_vel[:4] = [action[2], action[3], np.nan, np.nan]
-        msg.goal_tor[:4] = [np.nan, np.nan, np.nan, np.nan]
+        msg.goal_pos[:4] = array('d', [np.nan, np.nan, action[0], action[1]])
+        msg.goal_vel[:4] = array('d', [action[2], action[3], np.nan, np.nan])
+        msg.goal_tor[:4] = array('d', [np.nan, np.nan, np.nan, np.nan])
         self._goal_pub.publish(msg)
 
 
