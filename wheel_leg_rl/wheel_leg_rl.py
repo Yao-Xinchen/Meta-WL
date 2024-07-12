@@ -19,6 +19,8 @@ class WheelLegRL(Node):
         actor_path = os.path.join(package_path, 'model', 'actor.onnx')
         encoder_path = os.path.join(package_path, 'model', 'encoder.onnx')
         self._actor = WLActor(actor_path, encoder_path)
+
+        # subscriptions and publications
         self._state_sub = self.create_subscription(MotorState, "motor_state", self._state_callback, 10)
         self._command_sub = self.create_subscription(Move, "move", self._command_callback, 10)
         self._imu_sub = self.create_subscription(Imu, "imu", self._imu_callback, 10)
@@ -29,6 +31,11 @@ class WheelLegRL(Node):
 
         self._motor_pos = {}
         self._motor_vel = {}
+
+        # timeouts
+        self._timeout_threshold = 0.2
+        self._last_command_moment = rclpy.time.Time().nanoseconds
+        self._timeout_timer = self.create_timer(0.1, self._timeout_callback)
 
         self.get_logger().info("WheelLegRL initialized.")
 
@@ -44,7 +51,8 @@ class WheelLegRL(Node):
         self._actor.input_dof_vel([self._motor_vel["L_LEG"], self._motor_vel["R_LEG"], self._motor_vel["L_WHL"], self._motor_vel["R_WHL"]])
 
     def _command_callback(self, msg: Move) -> None:
-        self._actor.input_commands([msg.vel_x, msg.vel_y, msg.omega])
+        self._actor.input_commands([msg.vel_x, msg.omega, msg.height])
+        self._last_command_moment = rclpy.time.Time().nanoseconds
 
     def _imu_callback(self, msg: Imu) -> None:
         x = msg.angular_velocity.x
@@ -65,6 +73,10 @@ class WheelLegRL(Node):
         msg.goal_vel[:4] = array('d', [action[2], action[3], np.nan, np.nan])
         msg.goal_tor[:4] = array('d', [np.nan, np.nan, np.nan, np.nan])
         self._goal_pub.publish(msg)
+
+    def _timeout_callback(self) -> None:
+        if rclpy.time.Time().nanoseconds - self._last_command_moment > self._timeout_threshold * 1e9:
+            self._actor.input_commands([0, 0, 0.2])
 
 
 def main(args=None):
