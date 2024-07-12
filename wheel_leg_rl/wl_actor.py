@@ -73,7 +73,7 @@ class WLActor:
         with self._lock:
             self._observation[11:15] = dof_vel
 
-    def output_action(self) -> np.ndarray:
+    def output_action(self):
             '''action: [l_leg_pos, r_leg_pos, l_wheel_vel, r_wheel_vel]'''
             with self._lock:
                 return self._action
@@ -87,4 +87,5 @@ class WLActor:
             action = self._session.run([self._output_name], input_data)[0]
             with self._lock:
                 self._action = action
+                self._observation[15:] = action
             await asyncio.sleep(self._dt)
