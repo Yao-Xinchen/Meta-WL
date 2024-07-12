@@ -1,8 +1,10 @@
 import rclpy
 import numpy as np
 from rclpy.node import Node
+import os
 from wheel_leg_rl.wl_actor import WLActor
 from wheel_leg_rl.helpers import *
+from ament_index_python.packages import get_package_share_directory
 
 from device_interface.msg import MotorGoal
 from device_interface.msg import MotorState
@@ -13,7 +15,10 @@ from array import array
 class WheelLegRL(Node):
     def __init__(self) -> None:
         super().__init__('wheel_leg_rl')
-        self._actor = WLActor("../model/actor.onnx")
+        package_path = get_package_share_directory('wheel_leg_rl')
+        actor_path = os.path.join(package_path, 'model', 'actor.onnx')
+        encoder_path = os.path.join(package_path, 'model', 'encoder.onnx')
+        self._actor = WLActor(actor_path, encoder_path)
         self._state_sub = self.create_subscription(MotorState, "motor_state", self._state_callback, 10)
         self._command_sub = self.create_subscription(Move, "move", self._command_callback, 10)
         self._imu_sub = self.create_subscription(Imu, "imu", self._imu_callback, 10)
