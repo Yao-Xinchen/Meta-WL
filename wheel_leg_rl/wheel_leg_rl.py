@@ -27,12 +27,12 @@ class WheelLegRL(Node):
         self._command_sub = self.create_subscription(Move, "move", self._command_callback, 10)
         self._imu_sub = self.create_subscription(Imu, "imu", self._imu_callback, 10)
         self._goal_pub = self.create_publisher(MotorGoal, "motor_goal", 10)
-        self._pub_timer = self.create_timer(0.01, self._pub_callback)
+        self._pub_timer = self.create_timer(0.005, self._pub_callback)
 
         self._actor.start()
 
-        self._motor_pos = {}
-        self._motor_vel = {}
+        self._motor_pos = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
+        self._motor_vel = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
         self._convert = MotorJoint()
 
         # scales
@@ -61,8 +61,8 @@ class WheelLegRL(Node):
             self._motor_vel[id] = vel
         # convert to dof
         leg_pos, leg_vel = self._convert.motor_to_leg(
-            np.array([self._motor_pos["L_LEG"], self._motor_pos["R_LEG"]],
-                     [self._motor_vel["L_LEG"], self._motor_vel["R_LEG"]]))
+            np.array([self._motor_pos["L_LEG"], self._motor_pos["R_LEG"]]),
+            np.array([self._motor_vel["L_LEG"], self._motor_vel["R_LEG"]]))
         wheel_vel = self._convert.motor_to_wheel(np.array([self._motor_vel["L_WHL"], self._motor_vel["R_WHL"]]))
         # input to actor
         self._actor.input_dof_pos(np.array([leg_pos[0], leg_pos[1]]) * self._dof_pos_scale)
@@ -94,7 +94,7 @@ class WheelLegRL(Node):
         leg_pos = np.array([action[0], action[1]]) * self._action_leg_scale
         wheel_vel = np.array([action[2], action[3]]) * self._action_wheel_scale
         # convert to motor
-        leg_motor_pos, _ = self._convert.leg_to_motor(leg_pos, np.array([0, 0]))
+        leg_motor_pos = self._convert.leg_to_motor(leg_pos)
         wheel_motor_vel = self._convert.wheel_to_motor(wheel_vel)
         # publish
         msg = MotorGoal()

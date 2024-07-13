@@ -3,24 +3,20 @@ import numpy as np
 class MotorJoint:
     def __init__(self):
         self._deceleration = 20
-        self._leg_offset = 0.245
-        self._motor_offset = 0.0 # TODO: find the correct value
+        self._leg_offset = 0.245  # dof_pos + leg_offset = leg_length
+        self._motor_offset = 1.3  # dof_pos + motor_offset = joint_angle
     
-    def leg_to_motor(self, leg_pos, leg_vel):
+    def leg_to_motor(self, leg_pos):
         # pos
-        motor_pos = self._leg_to_motor_pos(leg_pos)
-        # vel
-        temp_dt = 0.001
-        motor_pos_next = self._leg_to_motor_pos(leg_pos + leg_vel * temp_dt)
-        motor_vel = (motor_pos_next - motor_pos) / temp_dt
-        return motor_pos, motor_vel
+        motor_pos = self._leg_to_motor_pos(leg_pos) * np.array([-1, 1])
+        return motor_pos
     
     def motor_to_leg(self, motor_pos, motor_vel):
         # pos
-        leg_pos = self._motor_to_leg_pos(motor_pos)
+        leg_pos = self._motor_to_leg_pos(motor_pos * np.array([-1, 1]))
         # vel
         temp_dt = 0.001
-        leg_pos_next = self._motor_to_leg_pos(motor_pos + motor_vel * temp_dt)
+        leg_pos_next = self._motor_to_leg_pos((motor_pos + motor_vel * temp_dt) * np.array([-1, 1]))
         leg_vel = (leg_pos_next - leg_pos) / temp_dt
         return leg_pos, leg_vel
     
