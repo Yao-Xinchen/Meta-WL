@@ -5,7 +5,7 @@ from rclpy.node import Node
 import os
 from wheel_leg_rl.wl_actor import WLActor
 from wheel_leg_rl.helpers import *
-from wheel_leg_rl.motor_joint import MotorJoint
+from wheel_leg_rl.converter import Converter
 from ament_index_python.packages import get_package_share_directory
 
 from device_interface.msg import MotorGoal
@@ -33,7 +33,7 @@ class WheelLegRL(Node):
 
         self._motor_pos = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
         self._motor_vel = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
-        self._convert = MotorJoint()
+        self._convert = Converter()
 
         # scales
         self._ang_vel_scale = 0.25
@@ -71,7 +71,7 @@ class WheelLegRL(Node):
     def _command_callback(self, msg: Move) -> None:
         self._actor.input_commands(np.array(
             [msg.vel_x * self._lin_vel_scale,
-            msg.omega * self._angular_vel_scale,
+            msg.omega * self._ang_vel_scale,
             msg.height * self._height_scale]))
         self._last_command_moment = rclpy.time.Time().nanoseconds
 
