@@ -29,8 +29,6 @@ class WheelLegRL(Node):
         self._goal_pub = self.create_publisher(MotorGoal, "motor_goal", 10)
         self._pub_timer = self.create_timer(0.005, self._pub_callback)
 
-        self._actor.start()
-
         self._motor_pos = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
         self._motor_vel = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
         self._convert = Converter()
@@ -107,6 +105,7 @@ class WheelLegRL(Node):
     def _timeout_callback(self) -> None:
         # check timeout regularly
         if rclpy.time.Time().nanoseconds - self._last_command_moment > self._timeout_threshold * 1e9:
+            # stop robot if no command received for a while
             self._actor.input_commands(np.array([0, 0, 0.2]))
 
 

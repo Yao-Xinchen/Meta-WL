@@ -1,8 +1,6 @@
 import onnx
 import onnxruntime as ort
 import numpy as np
-import threading
-import asyncio
 
 class ObsEncoder:
     def __init__(self, model_path):

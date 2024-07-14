@@ -4,6 +4,7 @@ import numpy as np
 import threading
 import asyncio
 from wheel_leg_rl.obs_encoder import ObsEncoder
+import rclpy
 
 class WLActor:
     def __init__(self, actor_path, encoder_path, dt=0.005):
@@ -29,25 +30,19 @@ class WLActor:
         # threading
         self._dt = dt
         self._lock = threading.Lock()
-        self._shutdown = threading.Event()
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._start_async_loop)
 
+        self._thread.start()
+
     def __del__(self):
-        self.stop()
+        self._thread.join()
 
     def _start_async_loop(self):
         asyncio.set_event_loop(self._loop)
         self._loop.run_until_complete(self._run())
         self._loop.close()
 
-    def start(self):
-        self._thread.start()
-
-    def stop(self):
-        self._shutdown.set()
-        self._thread.join()
-    
     def input_base_ang_vel(self, base_ang_vel):
         '''base_ang_vel: [x, y, z]'''
         with self._lock:
@@ -79,7 +74,7 @@ class WLActor:
                 return self._action
 
     async def _run(self):
-        while not self._shutdown.is_set():
+        while rclpy.ok():
             with self._lock:
                 observation = self._observation.copy()
             latent = self._encoder.step(observation)
