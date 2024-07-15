@@ -43,6 +43,13 @@ def quat_multiply(q1, q2):
     z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2
     return np.array([w, x, y, z])
 
+def quat_rotate(q, v):
+    q = normalize_quaternion(q)
+    v_quat = np.array([0] + v.tolist())  # Convert vector to quaternion with zero real part
+    # Quaternion multiplication (q * v * q_inv)
+    v_rotated = quat_multiply(quat_multiply(q, v_quat), inverse_quaternion(q))
+    return v_rotated[1:]  # Return only the vector part
+
 def quat_rotate_inverse(q, v):
     q = normalize_quaternion(q)
     q_inv = inverse_quaternion(q)
@@ -50,3 +57,11 @@ def quat_rotate_inverse(q, v):
     # Quaternion multiplication (q_inv * v * q)
     v_rotated = quat_multiply(quat_multiply(q_inv, v_quat), q)
     return v_rotated[1:]  # Return only the vector part
+
+# world_gravity = np.array([0, 0, -9.81])
+# world_to_imu = [1, 0, 0, 0]
+# imu_to_base = [0.9914486, 0.0, -0.1305262, 0.0]
+# world_to_base = quat_multiply(imu_to_base, world_to_imu)
+# base_gravity = quat_rotate_inverse(world_to_base, world_gravity)
+
+# print(base_gravity)

@@ -1,8 +1,7 @@
 import numpy as np
 import rclpy
-import rclpy.logging
 
-class Converter:
+class MotorConverter:
     def __init__(self):
         self._deceleration = 20
         self._leg_offset = 0.245
