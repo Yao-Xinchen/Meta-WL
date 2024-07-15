@@ -29,8 +29,11 @@ class WheelLegRL(Node):
         self._goal_pub = self.create_publisher(MotorGoal, "motor_goal", 10)
         self._pub_timer = self.create_timer(0.005, self._pub_callback)
 
+        # buffers
         self._motor_pos = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
         self._motor_vel = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
+
+        # converter
         self._convert = MotorConverter()
 
         # scales
@@ -81,7 +84,7 @@ class WheelLegRL(Node):
         self._actor.input_base_ang_vel(np.array([x, y, z]) * self._ang_vel_scale)
 
         # gravity vector
-        world_gravity = np.array([0, 0, -9.81])
+        world_gravity = np.array([0, 0, -1.0])  # unit vector pointing down
         world_to_imu = [msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z]
         imu_to_base = [0.99552905, 0.0, -0.09445582, 0.0]  # base's x is 10.84 degrees upper than imu's
         world_to_base = quat_multiply(imu_to_base, world_to_imu)
