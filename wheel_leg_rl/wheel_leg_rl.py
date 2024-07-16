@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import time
 from array import array
 from wheel_leg_rl.wl_actor import WLActor
 from wheel_leg_rl.quaternion import *
@@ -17,6 +18,7 @@ from sensor_msgs.msg import Imu
 class WheelLegRL(Node):
     def __init__(self):
         super().__init__('wheel_leg_rl')
+        time.sleep(1.0)
         package_path = get_package_share_directory('wheel_leg_rl')
         actor_path = os.path.join(package_path, 'model', 'actor.onnx')
         encoder_path = os.path.join(package_path, 'model', 'encoder.onnx')
