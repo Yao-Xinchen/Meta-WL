@@ -18,7 +18,7 @@ from sensor_msgs.msg import Imu
 class WheelLegRL(Node):
     def __init__(self):
         super().__init__('wheel_leg_rl')
-        time.sleep(1.0)
+        time.sleep(3.0)
         package_path = get_package_share_directory('wheel_leg_rl')
         actor_path = os.path.join(package_path, 'model', 'actor.onnx')
         encoder_path = os.path.join(package_path, 'model', 'encoder.onnx')
@@ -49,7 +49,7 @@ class WheelLegRL(Node):
 
         # timeouts
         self._timeout_threshold = 0.2
-        self._last_command_moment = rclpy.time.Time().nanoseconds
+        self._last_command_moment = self.get_clock().now()
         self._timeout_timer = self.create_timer(0.1, self._timeout_callback)
 
         self.get_logger().info("WheelLegRL initialized.")
@@ -63,10 +63,12 @@ class WheelLegRL(Node):
             self._motor_pos[id] = pos
             self._motor_vel[id] = vel
         # convert to dof
-        leg_pos, leg_vel = self._convert.motor_to_leg(
-            np.array([self._motor_pos["L_LEG"], self._motor_pos["R_LEG"]]),
-            np.array([self._motor_vel["L_LEG"], self._motor_vel["R_LEG"]]))
-        wheel_vel = self._convert.motor_to_wheel(np.array([self._motor_vel["L_WHL"], self._motor_vel["R_WHL"]]))
+        leg_motor_pos = np.array([self._motor_pos["L_LEG"], self._motor_pos["R_LEG"]])
+        leg_motor_vel = np.array([self._motor_vel["L_LEG"], self._motor_vel["R_LEG"]])
+        wheel_motor_vel = np.array([self._motor_vel["L_WHL"], self._motor_vel["R_WHL"]])
+        leg_pos, leg_vel = self._convert.motor_to_leg(leg_motor_pos, leg_motor_vel)
+        wheel_vel = self._convert.motor_to_wheel(wheel_motor_vel)
+
         # input to actor
         self._actor.input_dof_pos(np.array([leg_pos[0], leg_pos[1]]) * self._dof_pos_scale)
         self._actor.input_dof_vel(np.array([leg_vel[0], leg_vel[1], wheel_vel[0], wheel_vel[1]]) * self._dof_vel_scale)
@@ -76,7 +78,7 @@ class WheelLegRL(Node):
             [msg.vel_x * self._lin_vel_scale,
             msg.omega * self._ang_vel_scale,
             msg.height * self._height_scale]))
-        self._last_command_moment = rclpy.time.Time().nanoseconds
+        self._last_command_moment = self.get_clock().now()
 
     def _imu_callback(self, msg: Imu):
         # angular velocity
@@ -88,9 +90,9 @@ class WheelLegRL(Node):
         # gravity vector
         world_gravity = np.array([0, 0, -1.0])  # unit vector pointing down
         world_to_imu = [msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z]
-        imu_to_base = [0.99552905, 0.0, -0.09445582, 0.0]  # base's x is 10.84 degrees upper than imu's
-        world_to_base = quat_multiply(imu_to_base, world_to_imu)
-        base_gravity = quat_rotate_inverse(world_to_base, world_gravity)
+        imu_to_base = euler_to_quaternion(0, 8.0 * np.pi / 180, 0)
+        imu_gravity = quat_rotate_inverse(world_to_imu, world_gravity)
+        base_gravity = quat_rotate(imu_to_base, imu_gravity)
         self._actor.input_projected_gravity(base_gravity)
 
     def _pub_callback(self):
@@ -111,9 +113,9 @@ class WheelLegRL(Node):
 
     def _timeout_callback(self):
         # check timeout regularly
-        if rclpy.time.Time().nanoseconds - self._last_command_moment > self._timeout_threshold * 1e9:
+        if self.get_clock().now().nanoseconds - self._last_command_moment.nanoseconds > self._timeout_threshold * 1e9:
             # stop robot if no command received for a while
-            self._actor.input_commands(np.array([0, 0, 0.2]))
+            self._actor.input_commands(np.array([0.0, 0, 0.2]))
 
 
 def main(args=None):
