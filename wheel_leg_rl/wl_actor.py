@@ -26,6 +26,7 @@ class WLActor:
         self._observation = np.zeros((self._num_observations,), dtype=np.float32)
         self._action = np.zeros((self._num_actions,), dtype=np.float32)
         self._latent = np.zeros((self._num_latents,), dtype=np.float32) # output from encoder
+        self._observation[6:9] = np.array([0.0, 0.0, 0.5])  # commands
 
         # threading
         self._dt = dt
@@ -54,7 +55,7 @@ class WLActor:
             self._observation[3:6] = projected_gravity
 
     def input_commands(self, commands):
-        '''commands: [lin_vel_x, lin_vel_y, ang_vel_yaw]'''
+        '''commands: [lin_vel_x, angular_vel_yaw, height]'''
         with self._lock:
             self._observation[6:9] = commands
 

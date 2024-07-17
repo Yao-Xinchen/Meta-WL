@@ -46,6 +46,7 @@ class WheelLegRL(Node):
         self._dof_pos_scale = 1.0
         self._action_leg_scale = 0.1
         self._action_wheel_scale = 7.0
+        self._command_scale = np.array([self._lin_vel_scale, self._ang_vel_scale, self._height_scale])
 
         # timeouts
         self._timeout_threshold = 0.2
@@ -74,10 +75,8 @@ class WheelLegRL(Node):
         self._actor.input_dof_vel(np.array([leg_vel[0], leg_vel[1], wheel_vel[0], wheel_vel[1]]) * self._dof_vel_scale)
 
     def _command_callback(self, msg: Move):
-        self._actor.input_commands(np.array(
-            [msg.vel_x * self._lin_vel_scale,
-            msg.omega * self._ang_vel_scale,
-            msg.height * self._height_scale]))
+        command = np.array([msg.vel_x, msg.omega, msg.height])
+        self._actor.input_commands(command * self._command_scale)
         self._last_command_moment = self.get_clock().now()
 
     def _imu_callback(self, msg: Imu):
@@ -90,7 +89,7 @@ class WheelLegRL(Node):
         # gravity vector
         world_gravity = np.array([0, 0, -1.0])  # unit vector pointing down
         world_to_imu = [msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z]
-        imu_to_base = euler_to_quaternion(0, 8.0 * np.pi / 180, 0)
+        imu_to_base = euler_to_quaternion(0, 10.0 * np.pi / 180, 0)
         imu_gravity = quat_rotate_inverse(world_to_imu, world_gravity)
         base_gravity = quat_rotate(imu_to_base, imu_gravity)
         self._actor.input_projected_gravity(base_gravity)
@@ -115,7 +114,7 @@ class WheelLegRL(Node):
         # check timeout regularly
         if self.get_clock().now().nanoseconds - self._last_command_moment.nanoseconds > self._timeout_threshold * 1e9:
             # stop robot if no command received for a while
-            self._actor.input_commands(np.array([0.0, 0, 0.2]))
+            self._actor.input_commands(np.array([0.0, 0.0, 0.1]) * self._command_scale)
 
 
 def main(args=None):
