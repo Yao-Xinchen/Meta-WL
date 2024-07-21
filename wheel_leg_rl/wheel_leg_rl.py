@@ -14,6 +14,7 @@ from device_interface.msg import MotorGoal
 from device_interface.msg import MotorState
 from behavior_interface.msg import Move
 from sensor_msgs.msg import Imu
+from std_msgs.msg import Float64MultiArray
 
 class WheelLegRL(Node):
     def __init__(self):
@@ -30,6 +31,8 @@ class WheelLegRL(Node):
         self._imu_sub = self.create_subscription(Imu, "imu", self._imu_callback, 10)
         self._goal_pub = self.create_publisher(MotorGoal, "motor_goal", 10)
         self._pub_timer = self.create_timer(0.005, self._pub_callback)
+
+        self._debug_pub = self.create_publisher(Float64MultiArray, "debug", 10)
 
         # buffers
         self._motor_pos = {"L_WHL": 0, "R_WHL": 0, "L_LEG": 0, "R_LEG": 0}
@@ -99,6 +102,8 @@ class WheelLegRL(Node):
         action = self._actor.output_action()
         leg_pos = np.array([action[0], action[1]]) * self._action_leg_scale
         wheel_vel = np.array([action[2], action[3]]) * self._action_wheel_scale
+        data = np.concatenate((leg_pos, wheel_vel))
+        self._debug_pub.publish(Float64MultiArray(data=data))
         # convert to motor
         leg_motor_pos = self._convert.leg_to_motor(leg_pos)
         wheel_motor_vel = self._convert.wheel_to_motor(wheel_vel)
@@ -114,7 +119,7 @@ class WheelLegRL(Node):
         # check timeout regularly
         if self.get_clock().now().nanoseconds - self._last_command_moment.nanoseconds > self._timeout_threshold * 1e9:
             # stop robot if no command received for a while
-            self._actor.input_commands(np.array([0.0, 0.0, 0.1]) * self._command_scale)
+            self._actor.input_commands(np.array([0.0, 0.0, 0.12]) * self._command_scale)
 
 
 def main(args=None):
