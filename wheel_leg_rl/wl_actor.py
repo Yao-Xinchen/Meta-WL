@@ -25,7 +25,7 @@ class WLActor:
         self._num_actions = 4
         self._num_latents = 3
         self._observation = np.zeros((self._num_observations,), dtype=np.float32)
-        self._observation[6:9] = np.array([0.0, 0.0, 0.12])  # commands
+        self._observation[6:9] = np.array([0.0, 0.0, 0.1])  # commands
 
         # kalman filter
         action_filter = KalmanFilter(dim_x=4, dim_z=4)  # [l_leg_pos, r_leg_pos, l_wheel_vel, r_wheel_vel]

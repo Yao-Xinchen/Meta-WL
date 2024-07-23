@@ -105,7 +105,7 @@ class WheelLegRL(Node):
         # gravity vector
         world_gravity = np.array([0, 0, -1.0])  # unit vector pointing down
         world_to_imu = [msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z]
-        imu_to_base = euler_to_quaternion(0, 10.0 * np.pi / 180, 0)
+        imu_to_base = euler_to_quaternion(0, 13.0 * np.pi / 180, 0)
         imu_gravity = quat_rotate_inverse(world_to_imu, world_gravity)
         base_gravity = quat_rotate(imu_to_base, imu_gravity)
         self._actor.input_projected_gravity(base_gravity)
@@ -122,8 +122,8 @@ class WheelLegRL(Node):
         action = self._actor.output_action()
         leg_pos = np.array([action[0], action[1]]) * self._action_leg_scale
         wheel_vel = np.array([action[2], action[3]]) * self._action_wheel_scale
-        # data = np.concatenate((leg_pos, wheel_vel))
-        # self._debug_pub.publish(Float64MultiArray(data=data))
+        data = np.concatenate((leg_pos, wheel_vel))
+        self._debug_pub.publish(Float64MultiArray(data=data))
         # convert to motor
         leg_motor_pos = self._convert.leg_to_motor(leg_pos)
         wheel_motor_vel = self._convert.wheel_to_motor(wheel_vel)
@@ -139,7 +139,7 @@ class WheelLegRL(Node):
         # check timeout regularly
         if self.get_clock().now().nanoseconds - self._last_command_moment.nanoseconds > self._timeout_threshold * 1e9:
             # stop robot if no command received for a while
-            self._actor.input_commands(np.array([0.0, 0.0, 0.12]) * self._command_scale)
+            self._actor.input_commands(np.array([0.0, 0.0, 0.1]) * self._command_scale)
 
 
 def main(args=None):
